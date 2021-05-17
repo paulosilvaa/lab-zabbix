@@ -10,6 +10,7 @@ Topologia
 
 O lab é composto por:
 
+'''
 * Servidores DNS
     * Bind
     * Autoritativo
@@ -28,3 +29,4 @@ O lab é composto por:
     * Distributed Replicated
 * Database
     * Maridb Galera Cluster
+'''

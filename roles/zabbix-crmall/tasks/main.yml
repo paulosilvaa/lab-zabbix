@@ -1,0 +1,223 @@
+---
+# tasks file for roles/zabbix-crmall
+
+- name: Changing Hostname 
+  hostname: 
+    name: "{{ inventory_hostname }}" 
+
+- name: Updating Chache
+  yum:
+    update_cache: yes
+
+- name: Updating Yum Packages
+  yum: 
+    name: '*' 
+    state: latest
+
+- name: Installing Zabbix Repository
+  yum:
+    name: "{{ zabbix_repo }}"
+    state: present
+    disable_gpg_check: 1
+
+- name: Installing Zabbix Packages
+  yum:
+    name:
+      - zabbix-server-mysql
+      - zabbix-web-mysql
+      - zabbix-apache-conf
+      - zabbix-agent
+      - mod_ssl
+    state: latest
+
+# Instaling Mariadb
+
+- name: Installing Mariadb Packages
+  yum:
+    name:
+      - mariadb-server
+      - python3-PyMySQL
+    state: latest
+
+- name: Starting Mariadb 
+  systemd: 
+    name: mariadb
+    state: started 
+    enabled: yes
+
+- name: Is root password set?
+  command: mysql -u root --execute "SELECT NOW()"
+  register: is_root_password_set
+  ignore_errors: yes
+
+- name: Updating root Password
+  mysql_user:
+    login_host: 'localhost'
+    login_user: 'root'
+    login_password: '' 
+    name: 'root'
+    password: "{{ mysql_pass }}"
+    state: present
+  when: is_root_password_set.rc == 0
+
+- name: Removes anonymous user account
+  mysql_user:
+    login_user: 'root'
+    login_password: "{{ mysql_pass }}"
+    name: ''
+    host_all: yes
+    state: absent
+  when: is_root_password_set.rc == 0
+
+- name: Create Zabbix database
+  command: mysql -u root -p"{{ mysql_pass }}" -e "create database zabbix character set utf8 collate utf8_bin"
+  when: is_root_password_set.rc == 0
+
+- name: Create user for zabbix DB
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_pass }}"
+    name: zabbix
+    password: "{{ zabbix_pass }}"
+    priv: zabbix.*:ALL
+    state: present
+  when: is_root_password_set.rc == 0
+
+- name: Importing Zabbix Schema
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_pass }}"
+    name: zabbix
+    state: import
+    target: /usr/share/doc/zabbix-server-mysql/create.sql.gz
+  when: is_root_password_set.rc == 0
+
+# Configuring Zabbix
+
+- name: Configuring zabbix_server.conf
+  lineinfile:
+    path: "{{ zabbix_server_conf }}"
+    regexp: '^# DBPassword='
+    line: DBPassword={{ zabbix_pass }}
+
+- name: Setting SELinux httpd_can_network_connect
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+
+- name: Setting SELinux zabbix_can_network
+  seboolean:
+    name: zabbix_can_network
+    state: yes
+    persistent: yes
+
+- name: Setting SELinux daemons_enable_cluster_mode
+  seboolean:
+    name: daemons_enable_cluster_mode
+    state: yes
+    persistent: yes
+
+- name: Setting SELinux httpd_can_connect_zabbix
+  seboolean:
+    name: httpd_can_connect_zabbix
+    state: yes
+    persistent: yes
+
+- name: Uploading SELinux module
+  copy:
+    src: ../files/my-zabbixserver.pp
+    dest: /tmp/
+    mode: 644
+
+- name: Instaling SELinux module
+  command: semodule -i /tmp/my-zabbixserver.pp
+
+- name: Starting Zabbix Server 
+  systemd: 
+    name: zabbix-server 
+    state: started
+    enabled: yes
+
+- name: Starting Zabbix Agent 
+  systemd: 
+    name: zabbix-agent
+    state: started
+    enabled: yes
+
+- name: Starting Apache 
+  systemd: 
+    name: httpd
+    state: started 
+    enabled: yes
+
+- name: Starting PHP-FPM
+  systemd: 
+    name: php-fpm 
+    state: started
+    enabled: yes
+
+- name: Firewall Http
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Firewall HTTPS
+  firewalld:
+    service: https 
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Firewall Zabbix-Server 
+  firewalld:
+    service: zabbix-server 
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Firewall Zabbix-Agent 
+  firewalld:
+    service: zabbix-agent
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+# Configuring Web Interface
+
+- name: Check if zabbix.conf exists 
+  stat:
+    path: /etc/httpd/conf.d/zabbix.conf.old
+  register: stat_zabbixconf
+
+- name: Renaming old files 
+  shell: mv /etc/httpd/conf.d/zabbix.conf /etc/httpd/conf.d/zabbix.conf.old
+  when: not stat_zabbixconf.stat.exists
+
+- name: Uploading zabbix.conf
+  template: 
+    src: ../files/zabbix.conf.j2
+    dest: /etc/httpd/conf.d/zabbix.conf
+
+- name: Creating SSL Directory
+  file:
+    path: /etc/httpd/ssl
+    mode: 0700
+    owner: root
+    group: root
+    state: directory
+
+- name: Uploading certificates
+  synchronize:
+    src: ../files/certs/
+    dest: /etc/httpd/ssl/
+    owner: no 
+    group: no
+
+- name: Uploading zabbix.conf
+  template: 
+    src: ../files/zabbix-ssl.conf.j2
+    dest: /etc/httpd/conf.d/zabbix-ssl.conf
+  notify: restart apache

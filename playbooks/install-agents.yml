@@ -1,0 +1,55 @@
+# install-agents.yml
+
+---
+  - hosts: agents
+    become: true
+
+    vars:
+      zabbix_repo: "https://repo.zabbix.com/zabbix/5.2/rhel/8/x86_64/zabbix-release-5.2-1.el8.noarch.rpm"
+      zabbix_agentd_conf: "/etc/zabbix/zabbix_agentd.conf"
+
+    tasks:
+      - name: Updating Chache
+        yum:
+          update_cache: yes
+
+      - name: Updating Yum Packages
+        yum: 
+          name: '*' 
+          state: latest
+
+      - name: Installing Zabbix Repository
+        yum:
+          name: "{{ zabbix_repo }}"
+          state: present
+          disable_gpg_check: 1
+
+      - name: Installing Zabbix Packages
+        yum:
+          name: zabbix-agent
+          state: latest
+
+      - name: Configuring agentd.conf
+        lineinfile:
+          path: "{{ zabbix_agentd_conf }}"
+          regexp: '^Server=127.0.0.1$'
+          line: Server={{ hostvars['zabbix-server'].ansible_host }}
+
+      - name: Configuring agentd.conf Hostname
+        lineinfile:
+          path: "{{ zabbix_agentd_conf }}"
+          regexp: '^Hostname=.*$'
+          line: Hostname={{ inventory_hostname }}
+
+      - name: Starting Zabbix Agent
+        systemd:
+          name: zabbix-agent
+          state: started
+          enabled: yes
+
+      - name: Firewall Zabbix-Agent 
+        firewalld:
+          service: zabbix-agent
+          permanent: yes
+          state: enabled
+          immediate: yes

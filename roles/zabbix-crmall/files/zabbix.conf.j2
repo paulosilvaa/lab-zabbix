@@ -1,0 +1,5 @@
+<VirtualHost *:80>
+        ServerName zabbix.{{ domain }}
+        DocumentRoot /usr/share/zabbix
+        Redirect permanent / https://zabbix.{{ domain }}
+</VirtualHost>

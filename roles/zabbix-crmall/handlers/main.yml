@@ -1,0 +1,4 @@
+---
+# handlers file for roles/zabbix-crmall
+- name: restart apache
+  systemd: name=httpd state=restarted

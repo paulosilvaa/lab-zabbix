@@ -1,0 +1,6 @@
+---
+# zabbix-crmall.yml
+  - hosts: zabbix
+    become: true
+    roles:
+      - zabbix-crmall

@@ -8,9 +8,6 @@ Topologia
 
 ![Topologia](images/topo.png)
 
-O lab é composto por:
-
-
 * **Servidores DNS**
     * Bind
     * Autoritativo

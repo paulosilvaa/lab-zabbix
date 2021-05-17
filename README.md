@@ -10,21 +10,21 @@ Topologia
 
 O lab é composto por:
 
-- Servidores DNS
-    - Bind
-    - Autoritativo
-    - Recursivo
-- Load Balancers
-    - Haproxy
-    - SSL Termination
-    - HTTPS Redirection
-    - Round Robin
-    - Keepalived
-- Web Servers
-    - Apache
-    - PHP
-- Storage
-    - GlusterFS
-    - Distributed Replicated
-- Database
-    - Maridb Galera Cluster
+* Servidores DNS
+    * Bind
+    * Autoritativo
+    * Recursivo
+* Load Balancers
+    * Haproxy
+    * SSL Termination
+    * HTTPS Redirection
+    * Round Robin
+    * Keepalived
+* Web Servers
+    * Apache
+    * PHP
+* Storage
+    * GlusterFS
+    * Distributed Replicated
+* Database
+    * Maridb Galera Cluster

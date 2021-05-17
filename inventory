@@ -1,10 +1,24 @@
 # hosts
 
 [zabbix]
-zabbix-server ansible_host=192.168.1.5
+zabbix-server ansible_host=192.168.1.230
 
 [agents]
-app1 ansible_host=192.168.1.14
+dns01 ansible_host=192.168.1.250
+dns02 ansible_host=192.168.1.251
+haproxy01 ansible_host=192.168.1.201
+haproxy02 ansible_host=192.168.1.202
+web01 ansible_host=192.168.1.205
+web02 ansible_host=192.168.1.206
+web03 ansible_host=192.168.1.207
+gfs01 ansible_host=192.168.1.210
+gfs02 ansible_host=192.168.1.211
+gfs03 ansible_host=192.168.1.212
+haproxy03 ansible_host=192.168.1.220
+haproxy04 ansible_host=192.168.1.221
+db01 ansible_host=192.168.1.225
+db02 ansible_host=192.168.1.226
+db03 ansible_host=192.168.1.227
 
 [local]
 control ansible_connection=local

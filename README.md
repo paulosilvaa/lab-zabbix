@@ -10,23 +10,22 @@ Topologia
 
 O lab é composto por:
 
-```bash
-* Servidores DNS
+
+* **Servidores DNS**
     * Bind
     * Autoritativo
     * Recursivo
-* Load Balancers
+* **Load Balancers**
     * Haproxy
     * SSL Termination
     * HTTPS Redirection
     * Round Robin
     * Keepalived
-* Web Servers
+* **Web Servers**
     * Apache
     * PHP
-* Storage
+* **Storage**
     * GlusterFS
     * Distributed Replicated
-* Database
+* **Database**
     * Maridb Galera Cluster
-```
